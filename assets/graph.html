@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* جلوگیری از اسکرول */
+    }
+    #mynetwork {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="mynetwork"></div>
+  <script>
+    // این تابع فقط از Flutter صدا زده می‌شود
+    function renderGraph(nodesJson, edgesJson) {
+      var nodes = new vis.DataSet(nodesJson);
+      var edges = new vis.DataSet(edgesJson);
+
+      var container = document.getElementById('mynetwork');
+      var data = { nodes: nodes, edges: edges };
+
+      var options = {
+        physics: true,
+        nodes: {
+          shape: 'ellipse', // بیضی
+          font: { color: '#000', face: 'Tahoma', align: 'center' }, // متن داخل نود
+          margin: 10
+        },
+        edges: {
+          color: { color: '#999' },
+          width: 2,
+          font: { align: 'middle', face: 'Tahoma' } // اسم فیلد وسط یال
+        }
+      };
+
+      new vis.Network(container, data, options);
+    }
+  </script>
+</body>
+</html>
