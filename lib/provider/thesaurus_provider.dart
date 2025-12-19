@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../service/thesaurus_api.dart';
@@ -240,6 +242,48 @@ class ThesaurusProvider extends ChangeNotifier {
     return null;
   }
 
+  Future<void> fetchDocPageIndexes(dynamic contentId) async {
+    try {
+      final url = ApiUrls.docPageIndexes(contentId);
+      final res = await http.get(Uri.parse(url));
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        if (body is List) {
+          _docPageIndexes = List<Map<String, dynamic>>.from(body);
+        } else {
+          _docPageIndexes = [];
+        }
+      } else {
+        _docPageIndexes = [];
+      }
+    } catch (_) {
+      _docPageIndexes = [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> fetchDocPageTerms(dynamic contentId) async {
+    try {
+      final url = ApiUrls.docPageTerms(contentId);
+      final res = await http.get(Uri.parse(url));
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        if (body is List) {
+          _docPageTerms = List<Map<String, dynamic>>.from(body);
+        } else {
+          _docPageTerms = [];
+        }
+      } else {
+        _docPageTerms = [];
+      }
+    } catch (_) {
+      _docPageTerms = [];
+    }
+    notifyListeners();
+  }
+
   Future<void> fetchDocIndexesTerms(dynamic contentId) async {
     try {
       final resp = await ThesaurusApi.fetchDocIndexesTerms(contentId);
@@ -290,10 +334,27 @@ class ThesaurusProvider extends ChangeNotifier {
 
       _docDetails = details;
 
-      dynamic rawPage = details != null ? (details['page_count'] ?? details['PageCount']) : null;
-      if (details != null && details['doc'] is Map) {
-        rawPage = details['doc']['page_count'] ?? rawPage;
+      dynamic rawPage;
+
+      if (details != null) {
+        // حالت ۱: page_count مستقیم در ریشه
+        if (details['page_count'] != null) {
+          rawPage = details['page_count'];
+        }
+
+        // حالت ۲: page_count داخل doc
+        if (details['doc'] is Map && details['doc']['page_count'] != null) {
+          rawPage = details['doc']['page_count'];
+        }
+
+        // حالت ۳: page_count داخل doc_details
+        if (details['doc_details'] is Map && details['doc_details']['page_count'] != null) {
+          rawPage = details['doc_details']['page_count'];
+        }
       }
+
+      _currentDocPageCount = _toInt(rawPage);
+
       if (details != null && details['doc_details'] is Map) {
         rawPage = details['doc_details']['page_count'] ?? rawPage;
       }
@@ -351,7 +412,18 @@ class ThesaurusProvider extends ChangeNotifier {
       _docDetails = docPart;
       _docContents = contentsPart.map((e) => DocContent.fromJson(e)).toList();
 
-      dynamic rawPage = docPart['page_count'] ?? docPart['PageCount'] ?? docPart['pages_count'];
+      dynamic rawPage;
+
+      if (docPart['page_count'] != null) {
+        rawPage = docPart['page_count'];
+      }
+
+      if (docPart['doc_details'] is Map && docPart['doc_details']['page_count'] != null) {
+        rawPage = docPart['doc_details']['page_count'];
+      }
+
+      _currentDocPageCount = _toInt(rawPage);
+
       if (docPart['doc_details'] is Map) {
         rawPage = docPart['doc_details']['page_count'] ?? rawPage;
       }
@@ -375,6 +447,30 @@ class ThesaurusProvider extends ChangeNotifier {
       _docContents = [];
       _currentDocPageCount = null;
       _docTerms = [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> searchLibraryPage(String query, int page) async {
+    _setLoading(true);
+    try {
+      final pageData = await ThesaurusApi.fetchPage(query, ApiUrls.resourcesPaged, page);
+
+      _resultsByService['کتابخانه'] = pageData.results;
+      _resultCounts['کتابخانه'] = pageData.total;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> searchLexiconPage(String query, int page) async {
+    _setLoading(true);
+    try {
+      final pageData = await ThesaurusApi.fetchPage(query, ApiUrls.lexiconPaged, page);
+
+      _resultsByService['فرهنگنامه'] = pageData.results;
+      _resultCounts['فرهنگنامه'] = pageData.total;
     } finally {
       _setLoading(false);
     }

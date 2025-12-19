@@ -34,21 +34,14 @@ class ThesaurusDetailPage extends StatefulWidget {
 class _ThesaurusDetailPageState extends State<ThesaurusDetailPage> {
   ThesaurusResult? data;
   bool loading = true;
+  List<Map<String, dynamic>> attachments = [];
 
   String activeLabel = 'رابطه';
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.result != null &&
-        (widget.result!.relationsCount != null ||
-         widget.result!.indexesCount != null)) {
-      data = widget.result;
-      loading = false;
-    } else {
-      _fetchDetail();
-    }
+    _fetchDetail();   // ⭐ همیشه دیتیل کامل را از API بگیر
   }
 
   Future<void> _fetchDetail() async {
@@ -69,17 +62,36 @@ class _ThesaurusDetailPageState extends State<ThesaurusDetailPage> {
 
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
+
         setState(() {
           data = ThesaurusResult.fromJson(body['data']);
           loading = false;
         });
+
+        _fetchAttachments(data!.id!);
       } else {
         setState(() => loading = false);
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() => loading = false);
     }
+  }
+
+  Future<void> _fetchAttachments(String termId) async {
+    try {
+      final url = "${ApiUrls.thesaurus}/$termId/resource";
+      final res = await http.get(Uri.parse(url));
+
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body);
+        if (list is List) {
+          setState(() {
+            attachments = list.cast<Map<String, dynamic>>();
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   Widget _buildSection() {
@@ -119,50 +131,52 @@ class _ThesaurusDetailPageState extends State<ThesaurusDetailPage> {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            ThesaurusDetailHeader(searchQuery: widget.searchQuery),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ThesaurusDetailHeader(searchQuery: widget.searchQuery),
 
-            Padding(
-              padding: const EdgeInsets.only(right: 8, top: 8),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ThesaurusDetailTitle(
-                      result: r,
-                      isDark: Theme.of(context).brightness == Brightness.dark,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    ThesaurusOptionsBar(
-                      activeLabel: activeLabel,
-                      onSelect: (label) => setState(() => activeLabel = label),
-                      indexCount: r.indexesCount ?? 0,
-                      relationCount: r.relationsCount ?? 0,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    _buildSection(),
-                  ],
+              Padding(
+                padding: const EdgeInsets.only(right: 8, top: 8),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
-            ),
-          ],
+
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      ThesaurusDetailTitle(
+                        result: r,
+                        isDark: Theme.of(context).brightness == Brightness.dark,
+                        attachments: attachments,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      ThesaurusOptionsBar(
+                        activeLabel: activeLabel,
+                        onSelect: (label) => setState(() => activeLabel = label),
+                        indexCount: r.indexesCount ?? 0,
+                        relationCount: r.relationsCount ?? 0,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _buildSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),)
+      ),
     );
   }
 }

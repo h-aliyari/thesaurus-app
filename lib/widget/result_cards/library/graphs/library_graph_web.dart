@@ -13,7 +13,8 @@ class LibraryGraphWeb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     try {
-      final viewType = 'graph-iframe-${result.id ?? result.hashCode}';
+      final viewType = 'graph-iframe-${result.id ?? ''}-${DateTime.now().microsecondsSinceEpoch}';
+
       ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
         final iframe = html.HTMLIFrameElement()
           ..srcdoc = _graphHtml(result, terms)
@@ -22,6 +23,7 @@ class LibraryGraphWeb extends StatelessWidget {
           ..style.height = '100%';
         return iframe;
       });
+
       return HtmlElementView(viewType: viewType);
     } catch (e) {
       debugPrint("Graph error inside LibraryGraphWeb: $e");
@@ -37,24 +39,52 @@ String _graphHtml(ThesaurusResult r, List<String> terms) {
   return '''
 <!DOCTYPE html>
 <html dir="rtl">
-<head><meta charset="utf-8" />
+<head>
+<meta charset="utf-8" />
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-<style>html,body{margin:0;padding:0;height:100%;overflow:hidden}#mynetwork{width:100%;height:100%;background:transparent}</style>
+<style>
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+#mynetwork{width:100%;height:100%;background:transparent}
+</style>
 </head>
 <body>
-  <div id="mynetwork"></div>
-  <script>
-    var nodes = new vis.DataSet($nodes);
-    var edges = new vis.DataSet($edges);
-    var container = document.getElementById('mynetwork');
-    var data = { nodes: nodes, edges: edges };
-    var options = {
-      physics: true,
-      nodes: { shape: 'ellipse', font: { color: '#000', face: 'Tahoma', align: 'center' }, margin: 10 },
-      edges: { color: { color: '#999' }, width: 2, font: { align: 'middle', face: 'Tahoma' } }
-    };
-    new vis.Network(container, data, options);
-  </script>
+<div id="mynetwork"></div>
+
+<script>
+var nodes = new vis.DataSet($nodes);
+var edges = new vis.DataSet($edges);
+
+var container = document.getElementById('mynetwork');
+var data = { nodes: nodes, edges: edges };
+
+var options = {
+  physics: true,
+  nodes: {
+    shape: 'ellipse',
+    font: { color: '#000', face: 'Tahoma', align: 'center' },
+    margin: 10
+  },
+  edges: {
+    color: { color: '#999' },
+    width: 2,
+    arrows: { to: { enabled: true, scaleFactor: 0.7 } }
+  }
+};
+
+var network = new vis.Network(container, data, options);
+
+// کلیک روی نود اصطلاح
+network.on("click", function (params) {
+  if (params.nodes.length > 0) {
+    var id = params.nodes[0];
+    if (id.startsWith("term_")) {
+      var slug = id.replace("term_", "");
+      window.parent.postMessage(JSON.stringify({ type: "openTerm", slug: slug }), "*");
+    }
+  }
+});
+</script>
+
 </body>
 </html>
 ''';
@@ -62,22 +92,23 @@ String _graphHtml(ThesaurusResult r, List<String> terms) {
 
 String _buildVisNodes(ThesaurusResult r, List<String> terms) {
   final nodes = <Map<String, dynamic>>[];
-  nodes.add({'id':'center','label': r.title.isEmpty ? 'بدون عنوان' : r.title, 'shape':'ellipse','color':{'background':'#a5d6a7','border':'#2e7d32'},'font':{'color':'#000','face':'Tahoma'}});
-  void add(String id, String label, String bg, String border) => nodes.add({'id':id,'label':label,'shape':'ellipse','color':{'background':bg,'border':border},'font':{'color':'#000','face':'Tahoma'}});
-  if (r.type?.trim().isNotEmpty ?? false) add('type', r.type!, '#d7ccc8', '#6d4c41');
-  if (r.publisher?.trim().isNotEmpty ?? false) add('publisher', r.publisher!, '#f8bbd0', '#ad1457');
-  if (r.author?.trim().isNotEmpty ?? false) add('author', r.author!, '#bbdefb', '#1565c0');
-  if (r.abstractText?.trim().isNotEmpty ?? false) add('abstract', r.abstractText!, '#e1bee7', '#5e35b1');
-  if (r.publishDate?.trim().isNotEmpty ?? false) add('publish_date', r.publishDate!, '#b2ebf2', '#00838f');
+
+  nodes.add({
+    'id': 'center',
+    'label': r.title.isEmpty ? 'بدون عنوان' : r.title,
+    'shape': 'ellipse',
+    'color': {'background': '#a5d6a7', 'border': '#2e7d32'},
+    'font': {'color': '#000', 'face': 'Tahoma'}
+  });
 
   for (var i = 0; i < terms.length; i++) {
-    final id = 'term_$i';
-    final label = terms[i].trim().isEmpty ? 'اصطلاح' : terms[i];
-    add(id, label, '#fff9c4', '#f9a825');
-  }
-
-  if (nodes.length == 1) {
-    add('info', 'اطلاعات بیشتر موجود نیست', '#eeeeee', '#9e9e9e');
+    nodes.add({
+      'id': 'term_$i',
+      'label': terms[i],
+      'shape': 'ellipse',
+      'color': {'background': '#fff9c4', 'border': '#f9a825'},
+      'font': {'color': '#000', 'face': 'Tahoma'}
+    });
   }
 
   return jsonEncode(nodes);
@@ -85,14 +116,14 @@ String _buildVisNodes(ThesaurusResult r, List<String> terms) {
 
 String _buildVisEdges(ThesaurusResult r, List<String> terms) {
   final edges = <Map<String, dynamic>>[];
-  void e(String from, String to, String label) => edges.add({'from':from,'to':to,'label':label});
-  if (r.type?.trim().isNotEmpty ?? false) e('center','type','نوع');
-  if (r.publisher?.trim().isNotEmpty ?? false) e('center','publisher','ناشر');
-  if (r.author?.trim().isNotEmpty ?? false) e('center','author','نویسنده');
-  if (r.abstractText?.trim().isNotEmpty ?? false) e('center','abstract','چکیده');
-  if (r.publishDate?.trim().isNotEmpty ?? false) e('center','publish_date','تاریخ انتشار');
 
-  for (var i = 0; i < terms.length; i++) e('center','term_$i','اصطلاح');
+  for (var i = 0; i < terms.length; i++) {
+    edges.add({
+      'from': 'center',
+      'to': 'term_$i',
+      'arrows': 'to'
+    });
+  }
 
   return jsonEncode(edges);
 }

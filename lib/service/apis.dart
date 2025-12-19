@@ -1,5 +1,6 @@
 /// همه لینک‌های سرویس‌ها
 class ApiUrls {
+  static const String baseUrl = 'https://apithesaurus.isca.ac.ir/';
   // جستجو
   static String thesaurusPaged(String query, int page) =>
       'https://apithesaurus.isca.ac.ir/v1/web/terms'
@@ -42,6 +43,15 @@ class ApiUrls {
 
   static String docRead(int id) =>
       'https://apithesaurus.isca.ac.ir/v1/web/docs/$id';
+
+  // نمایه‌های صفحه مطالعه
+  static String docPageIndexes(dynamic contentId) =>
+      'https://apithesaurus.isca.ac.ir/v1/web/docs/ai-indexes/$contentId';
+
+  // اصطلاحات صفحه مطالعه
+  static String docPageTerms(dynamic contentId) =>
+      'https://apithesaurus.isca.ac.ir/v1/web/docs/ai-indexes-terms/$contentId';
+
 
   // اصطلاحنامه
   static const String thesaurusStats =

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Thesaurus-app
 
 A multi‑platform Flutter application for exploring, searching, and analyzing Islamic sciences terminology.  
@@ -69,3 +70,7 @@ All API endpoints are defined in:
 lib/service/apis.dart
 
 You can update the base URL or endpoints as needed.
+=======
+# thesaurus-app
+پایگاه مدیریت اطلاعات علوم اسلامی / Islamic Sciences Information Management Database
+>>>>>>> cd931585a4fbab20783ea2d7d6f443f1d99c5817

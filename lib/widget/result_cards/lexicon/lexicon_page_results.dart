@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../model/result.dart';
 import 'lexicon_card.dart';
 import '../../../screen/translate.dart';
 import '../pagination.dart';
+import '../../../provider/thesaurus_provider.dart';
 
 class LexiconPageCards extends StatefulWidget {
   final List<ThesaurusResult> results;
@@ -48,9 +50,7 @@ class _LexiconPageCardsState extends State<LexiconPageCards> {
       );
     }
 
-    final start = _currentPage * widget.pageSize;
-    final end = (start + widget.pageSize).clamp(0, widget.results.length);
-    final pageItems = widget.results.sublist(start, end);
+    final pageItems = widget.results;
 
     final cs = Theme.of(context).colorScheme;
 
@@ -135,7 +135,11 @@ class _LexiconPageCardsState extends State<LexiconPageCards> {
                 currentPage: _currentPage,
                 totalItems: widget.count,
                 pageSize: widget.pageSize,
-                onPageChanged: (page) => setState(() => _currentPage = page),
+                onPageChanged: (page) async {
+                  final provider = Provider.of<ThesaurusProvider>(context, listen: false);
+                  await provider.searchLexiconPage(widget.query, page + 1);
+                  setState(() => _currentPage = page);
+                },
               ),
             )
           ],

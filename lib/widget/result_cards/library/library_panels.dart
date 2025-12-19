@@ -4,9 +4,27 @@ class LibraryIndexesPanel extends StatelessWidget {
   final List<Map<String, dynamic>> indexes;
   const LibraryIndexesPanel({super.key, required this.indexes});
 
+  String _extractTitle(Map<String, dynamic> item) {
+    return item['title'] ??
+           item['Title'] ??
+           item['name'] ??
+           item['Name'] ??
+           item['value'] ??
+           '';
+  }
+
+  String _extractId(Map<String, dynamic> item) {
+    return item['id']?.toString() ??
+           item['Id']?.toString() ??
+           item['TermId']?.toString() ??
+           item['DocId']?.toString() ??
+           '';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (indexes.isEmpty) return const SizedBox.shrink();
+
     final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -18,6 +36,7 @@ class LibraryIndexesPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // عنوان کادر
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             alignment: Alignment.centerRight,
@@ -29,25 +48,31 @@ class LibraryIndexesPanel extends StatelessWidget {
               ),
             ),
           ),
+
           Divider(height: 1, color: cs.secondary.withOpacity(0.4)),
+
+          // لیست
           SizedBox(
             height: 200,
             child: ListView.builder(
               itemCount: indexes.length,
               itemBuilder: (context, i) {
                 final item = indexes[i];
+                final title = _extractTitle(item);
+                final id = _extractId(item);
+
                 return ListTile(
                   dense: true,
                   title: Text(
-                    item['title'] ?? '',
+                    title,
                     style: textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[700],
                     ),
                     textAlign: TextAlign.right,
                   ),
                   onTap: () {
-                    // TODO: ناوبری به صفحه دیتیل نمایه
-                    debugPrint('Clicked index ${item['id']}');
+                    debugPrint('Clicked index $id');
+                    // TODO: ناوبری به دیتیل نمایه
                   },
                 );
               },
@@ -63,9 +88,27 @@ class LibraryTermsPanel extends StatelessWidget {
   final List<Map<String, dynamic>> terms;
   const LibraryTermsPanel({super.key, required this.terms});
 
+  String _extractTitle(Map<String, dynamic> item) {
+    return item['title'] ??
+           item['Title'] ??
+           item['name'] ??
+           item['Name'] ??
+           item['value'] ??
+           '';
+  }
+
+  String _extractId(Map<String, dynamic> item) {
+    return item['id']?.toString() ??
+           item['Id']?.toString() ??
+           item['TermId']?.toString() ??
+           item['DocId']?.toString() ??
+           '';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (terms.isEmpty) return const SizedBox.shrink();
+
     final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -77,6 +120,7 @@ class LibraryTermsPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // عنوان کادر
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             alignment: Alignment.centerRight,
@@ -88,24 +132,31 @@ class LibraryTermsPanel extends StatelessWidget {
               ),
             ),
           ),
+
           Divider(height: 1, color: cs.secondary.withOpacity(0.4)),
+
+          // لیست
           SizedBox(
             height: 200,
             child: ListView.builder(
               itemCount: terms.length,
               itemBuilder: (context, i) {
                 final item = terms[i];
+                final title = _extractTitle(item);
+                final id = _extractId(item);
+
                 return ListTile(
                   dense: true,
                   title: Text(
-                    item['title'] ?? '',
+                    title,
                     style: textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[700],
                     ),
                     textAlign: TextAlign.right,
                   ),
                   onTap: () {
-                    debugPrint('Clicked term ${item['id']}');
+                    debugPrint('Clicked term $id');
+                    // TODO: ناوبری به دیتیل اصطلاح
                   },
                 );
               },

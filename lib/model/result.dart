@@ -8,6 +8,14 @@ class ThesaurusResult {
     final raw = Map<String, dynamic>.from(json);
 
     final merged = Map<String, dynamic>.from(raw);
+
+    // ⭐ 1) merge کردن data (خیلی مهم)
+    if (json['data'] is Map<String, dynamic>) {
+      final dataMap = Map<String, dynamic>.from(json['data']);
+      merged.addAll(dataMap);
+    }
+
+    // ⭐ 2) merge کردن doc (مثل قبل)
     if (json.containsKey('doc') && json['doc'] is Map<String, dynamic>) {
       final docMap = Map<String, dynamic>.from(json['doc']);
       merged.addAll(docMap);
@@ -15,6 +23,7 @@ class ThesaurusResult {
       if (docMap['details'] != null) merged['details'] = docMap['details'];
     }
 
+    // ⭐ 3) merge کردن details سطح بالا
     if (json['details'] != null) merged['details'] = json['details'];
 
     return ThesaurusResult._(raw, merged);
@@ -84,6 +93,16 @@ class ThesaurusResult {
     return _clean(d).isNotEmpty ? _clean(d) : null;
   }
 
+  String? get note {
+    final n = _pickFirstString([
+      data['note'],
+      raw['note'],
+      data['Note'],
+      raw['Note'],
+    ]);
+    return _clean(n).isNotEmpty ? _clean(n) : null;
+  }
+
   String? get abstractText {
     final a = _pickFirstString([data['Abstract'], data['abstract'], data['Description'], data['description']]);
     return _clean(a).isNotEmpty ? _clean(a) : null;
@@ -105,8 +124,19 @@ class ThesaurusResult {
   }
 
   String? get domain {
-    final d = _pickFirstString([raw['domain'], raw['Domain'], data['domain'], data['Domain'],]);
-    return _clean(d).isNotEmpty ? _clean(d) : null;
+    final d = data['domain'] ?? raw['domain'];
+
+    if (d is Map) {
+      final t = d['title']?.toString().trim();
+      return (t != null && t.isNotEmpty) ? t : null;
+    }
+
+    if (d is String) {
+      final t = d.trim();
+      return t.isNotEmpty ? t : null;
+    }
+
+    return null;
   }
 
   String? get publisher {

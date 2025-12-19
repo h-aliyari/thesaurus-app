@@ -46,9 +46,7 @@ class _LibraryPageCardsState extends State<LibraryPageCards> {
     final int total = provider.getCount('کتابخانه');
 
     // صفحه‌بندی درست
-    final start = _currentPage * widget.pageSize;
-    final end = (start + widget.pageSize).clamp(0, results.length);
-    final pageItems = results.isNotEmpty ? results.sublist(start, end) : [];
+    final pageItems = results;
 
     const cardSpacing = 23.0;
 
@@ -185,7 +183,10 @@ class _LibraryPageCardsState extends State<LibraryPageCards> {
                 currentPage: _currentPage,
                 totalItems: total,
                 pageSize: widget.pageSize,
-                onPageChanged: (page) => setState(() => _currentPage = page),
+                onPageChanged: (page) async {
+                  await provider.searchLibraryPage(provider.lastQuery, page + 1);
+                  setState(() => _currentPage = page);
+                },
               ),
           ],
         );
