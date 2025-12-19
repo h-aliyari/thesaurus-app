@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../screen/gradient.dart';
 import '../../../../service/thesaurus_extra.dart';
 import '../../../../screen/search_box.dart';
+import '../../../../provider/thesaurus_provider.dart';
 
 class ThesaurusDetailHeader extends StatefulWidget {
   final String searchQuery;
@@ -41,19 +43,33 @@ class _ThesaurusDetailHeaderState extends State<ThesaurusDetailHeader> {
     setState(() => domains = result);
   }
 
-  void _onSearch(String q) {
+  Future<void> _onSearch(String q) async {
     if (q.trim().isEmpty) return;
 
+    final provider = context.read<ThesaurusProvider>();
+    provider.clear();
+
+    if (domains.isEmpty) {
+      await _loadDomains();
+    }
+
     if (selectedCategory == 'دامنه') {
-      context.go('/thesaurus?query=$q&domain=0');
+      await provider.searchAllDomains(q);
     } else {
       final domain = domains.firstWhere(
-        (d) => d['title'] == selectedCategory,
+        (d) {
+          final t1 = (d['title'] ?? '').toString().trim().replaceAll('ي', 'ی').replaceAll('ك', 'ک');
+          final t2 = selectedCategory.trim().replaceAll('ي', 'ی').replaceAll('ك', 'ک');
+          return t1 == t2;
+        },
         orElse: () => <String, dynamic>{},
       );
 
-      final domainParam = domain.isNotEmpty ? '&domain=${domain['id']}' : '&domain=0';
-      context.go('/thesaurus?query=$q$domainParam');
+      if (domain.isNotEmpty) {
+        await provider.searchDomain(q, domain['id']);
+      } else {
+        await provider.searchAllDomains(q);
+      }
     }
   }
 
@@ -106,7 +122,6 @@ class _ThesaurusDetailHeaderState extends State<ThesaurusDetailHeader> {
             ),
           ),
         ),
-
 
         // سرچ + دسته‌ها
         if (!isMobile)
@@ -212,23 +227,24 @@ class _ThesaurusDetailHeaderState extends State<ThesaurusDetailHeader> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 8,
-        runSpacing: 8,
-        children: List.generate(items.length * 2 - 1, (i) {
-          if (i.isOdd) return Container(width: 1.5, height: 18, color: Colors.white);
-          final it = items[i ~/ 2];
-          return TextButton(
-            onPressed: () => ctx.push(it['path']!),
-            child: Text(
-              it['fa']!,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-          );
-        }),
-      ),)
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: List.generate(items.length * 2 - 1, (i) {
+            if (i.isOdd) return Container(width: 1.5, height: 18, color: Colors.white);
+            final it = items[i ~/ 2];
+            return TextButton(
+              onPressed: () => ctx.push(it['path']!),
+              child: Text(
+                it['fa']!,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 }

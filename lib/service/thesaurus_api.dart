@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../model/result.dart';
 import '../model/doc_content.dart';
@@ -260,48 +261,46 @@ class ThesaurusApi {
   }
 
   // سرچ پیشرفته کتابخانه
-  static Future<PageResult> searchAdvancedDocs(Map<String, String> params) async {
-    final words = <String>[];
+  static Future<PageResult> searchAdvancedDocs(Map<String, String> queryParams) async {
+    try {
+      // ساخت URL با همه پارامترها
+      final uri = Uri.parse(ApiUrls.resources).replace(queryParameters: {
+        'word': queryParams['word'] ?? '',
+        'page': queryParams['page'] ?? '1',
+        'publisher': queryParams['publisher'] ?? '',
+        'author': queryParams['author'] ?? '',
+        'subject': queryParams['subject'] ?? '',
+        'type': queryParams['type'] ?? '0',
+      });
 
-    params.forEach((k, v) {
-      final vv = v.trim();
-      if (vv.isNotEmpty) words.add(vv);
-    });
+      final res = await http.get(uri);
 
-    if (words.isEmpty) {
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+
+        // گرفتن لیست نتایج
+        final resultsRaw = body['data'] as List<dynamic>? ?? [];
+          final results = resultsRaw
+              .whereType<Map<String, dynamic>>()
+              .map((e) => ThesaurusResult.fromJson(e))
+              .toList();
+
+        // گرفتن تعداد کل
+        int total = 0;
+          if (body['meta'] is Map &&
+              (body['meta']['pagination'] is Map) &&
+              (body['meta']['pagination']['total'] != null)) {
+            total = body['meta']['pagination']['total'] as int;
+          }
+
+        return PageResult(total, results);
+      } else {
+        throw Exception("searchAdvancedDocs failed: ${res.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("DEBUG[Api] searchAdvancedDocs error=$e");
       return PageResult(0, []);
     }
-
-    final uri = Uri.https(
-      'apithesaurus.isca.ac.ir',
-      '/v1/web/search/doc',
-      {'word': words.join(' '), 'page': '1'},
-    );
-
-    final res = await http.get(uri);
-    if (res.statusCode != 200) {
-      return PageResult(0, []);
-    }
-
-    final body = json.decode(utf8.decode(res.bodyBytes));
-
-    int total = 0;
-    if (body is Map &&
-        body['meta'] is Map &&
-        body['meta']['pagination'] is Map &&
-        body['meta']['pagination']['total'] is int) {
-      total = body['meta']['pagination']['total'];
-    }
-
-    final data = body['data'] ?? body['docs'] ?? body['results'] ?? [];
-
-    final results = data
-        .whereType<Map<String, dynamic>>()
-        .map((e) => ThesaurusResult.fromJson(e))
-        .toList();
-
-    return PageResult(total, results);
-
   }
 
   // صفحه‌بندی کامل برای صفحهٔ Home

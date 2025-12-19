@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AdvancedSearchBox extends StatelessWidget {
+class AdvancedSearchBox extends StatefulWidget {
   final String initialTitle;
   final String initialPublisher;
   final String initialAuthor;
@@ -15,7 +15,7 @@ class AdvancedSearchBox extends StatelessWidget {
     required String type,
   }) onSearch;
 
-  AdvancedSearchBox({
+  const AdvancedSearchBox({
     super.key,
     this.initialTitle = "",
     this.initialPublisher = "",
@@ -23,19 +23,39 @@ class AdvancedSearchBox extends StatelessWidget {
     this.initialSubject = "",
     this.initialType = "",
     required this.onSearch,
-  }) {
-    _titleController.text = initialTitle;
-    _publisherController.text = initialPublisher;
-    _authorController.text = initialAuthor;
-    _subjectController.text = initialSubject;
-    _typeController.text = initialType;
-  }
+  });
 
+  @override
+  State<AdvancedSearchBox> createState() => _AdvancedSearchBoxState();
+}
+
+class _AdvancedSearchBoxState extends State<AdvancedSearchBox> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _publisherController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
-  final TextEditingController _typeController = TextEditingController();
+
+  // لیست انواع
+  final Map<String, String> _typeMap = {
+    "": "0",
+    "کتاب": "1",
+    "مقاله": "2",
+    "مجله": "3",
+    "پایان نامه ارشد": "4",
+    "پایان نامه دکتری": "5",
+  };
+
+  String? _selectedType;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.initialTitle;
+    _publisherController.text = widget.initialPublisher;
+    _authorController.text = widget.initialAuthor;
+    _subjectController.text = widget.initialSubject;
+    _selectedType = widget.initialType.isNotEmpty ? widget.initialType : "";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +124,7 @@ class AdvancedSearchBox extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildField("موضوع", controller: _subjectController),
                 const SizedBox(height: 12),
-                _buildField("نوع", controller: _typeController),
+                _buildDropdownField("نوع"),
                 const SizedBox(height: 20),
 
                 // دکمه جستجو
@@ -119,18 +139,21 @@ class AdvancedSearchBox extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
+                      final typeCode = _typeMap[_selectedType ?? ""] ?? "0";
+
                       debugPrint('AdvancedSearchBox -> '
                           'title=${_titleController.text}, '
                           'publisher=${_publisherController.text}, '
                           'author=${_authorController.text}, '
                           'subject=${_subjectController.text}, '
-                          'type=${_typeController.text}');
-                      onSearch(
+                          'type=$typeCode');
+
+                      widget.onSearch(
                         title: _titleController.text.trim(),
                         publisher: _publisherController.text.trim(),
                         author: _authorController.text.trim(),
                         subject: _subjectController.text.trim(),
-                        type: _typeController.text.trim(),
+                        type: typeCode,
                       );
                     },
                     child: const Text("جستجو"),
@@ -155,6 +178,35 @@ class AdvancedSearchBox extends StatelessWidget {
         TextField(
           controller: controller,
           textAlign: TextAlign.right,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(borderSide: BorderSide(width: 0.5)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField(String label) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(label,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: _selectedType!.isEmpty ? null : _selectedType,
+          items: _typeMap.keys.map((type) {
+            return DropdownMenuItem<String>(
+              value: type,
+              child: Text(type.isEmpty ? "همه" : type, textAlign: TextAlign.right),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedType = value ?? "";
+            });
+          },
           decoration: const InputDecoration(
             border: OutlineInputBorder(borderSide: BorderSide(width: 0.5)),
           ),

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="test"
+        android:label="پایگاه مدیریت اطلاعات علوم اسلامی"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

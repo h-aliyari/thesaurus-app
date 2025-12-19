@@ -72,7 +72,7 @@ class _ThesaurusDetailTreeState extends State<ThesaurusDetailTree> {
       return const Center(
         child: Text(
           "درختواره‌ای موجود نیست",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
         ),
       );
     }

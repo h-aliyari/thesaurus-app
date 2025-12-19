@@ -62,7 +62,13 @@ class _LibraryReadPageState extends State<LibraryReadPage> {
 
   String? _extractImg(String html) {
     final m = RegExp(r'src="([^"]+)"').firstMatch(html);
-    return m?.group(1);
+    if (m == null) return null;
+    var src = m.group(1)?.trim();
+    // اگر رشته با http شروع نشه، دامنه رو اضافه کن
+    if (src != null && !src.startsWith('http')) {
+      src = "https://file.isca.ac.ir$src";
+    }
+    return src;
   }
 
   /// ساخت ویجت برای یک آیتم از docContents
@@ -84,9 +90,27 @@ class _LibraryReadPageState extends State<LibraryReadPage> {
     if (html != null && html.contains('<img')) {
       final url = _extractImg(html);
       if (url != null) {
+        debugPrint('DEBUG[LibraryReadPage] Trying to load image: $url');
         return Center(
           child: InteractiveViewer(
-            child: Image.network(url),
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('DEBUG[LibraryReadPage] Image load error for $url: $error');
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('تصویر در دسترس نیست'),
+                    Text(
+                      url,
+                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         );
       }

@@ -184,31 +184,31 @@ class ThesaurusProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      // ذخیره آخرین مقادیر برای استفاده در UI
       lastTitle = title;
       lastPublisher = publisher;
       lastAuthor = author;
       lastSubject = subject;
       lastType = type;
 
-      // ساخت رشته word ترکیبی
-      final words = <String>[];
-      if (title.isNotEmpty) words.add(title);
-      if (publisher.isNotEmpty) words.add(publisher);
-      if (author.isNotEmpty) words.add(author);
-      if (subject.isNotEmpty) words.add(subject);
-      if (type.isNotEmpty && type != '0') words.add(type);
-
+      // ساخت URL با همه پارامترها
       final queryParams = {
-        'word': words.join(' '),
+        'word': title,
         'page': '1',
+        'publisher': publisher.isNotEmpty ? publisher : '',
+        'author': author.isNotEmpty ? author : '',
+        'subject': subject.isNotEmpty ? subject : '',
+        'type': type.isNotEmpty ? type : '0',
       };
+
+      final uri = Uri.parse(ApiUrls.resources).replace(queryParameters: queryParams);
+      debugPrint("DEBUG[Provider] searchAdvanced url=$uri");
 
       final page = await ThesaurusApi.searchAdvancedDocs(queryParams);
 
       _resultsByService['کتابخانه'] = page.results;
       _resultCounts['کتابخانه'] = page.total;
 
+      debugPrint("DEBUG[Provider] searchAdvanced results=${page.results.length}, total=${page.total}");
     } catch (e) {
       debugPrint('DEBUG[Provider] searchAdvanced error: $e');
       _resultsByService['کتابخانه'] = [];

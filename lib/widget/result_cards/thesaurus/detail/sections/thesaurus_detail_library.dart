@@ -59,7 +59,7 @@ class _ThesaurusDetailLibraryState extends State<ThesaurusDetailLibrary> {
       return const Center(
         child: Text(
           "منبعی یافت نشد",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
         ),
       );
     }
